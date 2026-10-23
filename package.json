@@ -1,7 +1,7 @@
 {
   "name": "my-camera-app",
   "version": "1.0.0",
-  "description": "JS olmadan HTML5 kamera uygulamasi",
+  "description": "Dinamik Kamera Uygulamasi",
   "main": "index.html",
   "scripts": {
     "build": "echo 'Build OK'"
