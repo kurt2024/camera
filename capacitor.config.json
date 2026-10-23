@@ -1,0 +1,8 @@
+{
+  "appId": "com.example.cameraapp",
+  "appName": "Kamera Uygulamasi",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https"
+  }
+}
