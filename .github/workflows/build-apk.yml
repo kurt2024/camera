@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Java JDK 17 Kurulumu
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Bağımlılıkları Yükle
+        run: npm install
+
+      - name: Android Platformunu Ekle ve Senkronize Et
+        run: |
+          npx cap add android
+          npx cap sync android
+
+      - name: Kamera İzinlerini AndroidManifest.xml Dosyasına Ekle
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="true" />' $MANIFEST_PATH
+
+      - name: Gradle İzinlerini Düzenle
+        run: chmod +x android/gradlew
+
+      - name: APK Derle (Release Unsigned / Debug)
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: APK Dosyasını Artifact Olarak Yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: CameraApp-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
