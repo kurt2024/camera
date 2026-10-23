@@ -33,7 +33,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Tüm Donanım ve Medya İzinlerini AndroidManifest'e Ekle
+      - name: İzinleri ve WebChromeClient Yapılandırmasını Ekle
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           sed -i '/<application/i \
@@ -44,6 +44,12 @@ jobs:
               <uses-feature android:name="android.hardware.camera" android:required="true" />\n \
               <uses-feature android:name="android.hardware.camera.autofocus" />\n \
               <uses-feature android:name="android.hardware.microphone" android:required="true" />' $MANIFEST_PATH
+
+          # MainActivity.java dosyasına kamera/mikrofon izin onay köprüsünü ekle
+          MAIN_ACTIVITY="android/app/src/main/java/com/example/dynamiccamera/MainActivity.java"
+          if [ -f "$MAIN_ACTIVITY" ]; then
+            sed -i 's/public class MainActivity extends BridgeActivity {/import android.webkit.PermissionRequest;\nimport android.webkit.WebChromeClient;\n\npublic class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(android.os.Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {\n            @Override\n            public void onPermissionRequest(final PermissionRequest request) {\n                request.grant(request.getResources());\n            }\n        });\n    }/g' $MAIN_ACTIVITY
+          fi
 
       - name: Gradle Çalıştırma İznini Ver
         run: chmod +x android/gradlew
