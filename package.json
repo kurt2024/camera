@@ -1,10 +1,10 @@
 {
   "name": "my-camera-app",
   "version": "1.0.0",
-  "description": "Web tabanli kamera uygulamasi",
+  "description": "JS olmadan HTML5 kamera uygulamasi",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'Web derlemesi tamamlandi'"
+    "build": "echo 'Build OK'"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
