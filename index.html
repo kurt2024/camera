@@ -13,101 +13,53 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            height: 100vh;
+            justify-content: center;
+            min-height: 100vh;
             padding: 20px;
         }
-        h1 { font-size: 1.2rem; margin-top: 10px; opacity: 0.8; }
-        .viewport {
+        .container {
             width: 100%;
             max-width: 400px;
-            height: 65vh;
-            background: #000;
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            text-align: center;
         }
-        video, canvas {
+        h1 { font-size: 1.5rem; margin-bottom: 24px; }
+        
+        /* Gizli Dosya Girdisi */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Fotoğraf Çek Butonu */
+        .btn-capture {
+            display: inline-block;
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        canvas { display: none; }
-        .controls {
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-        }
-        button {
-            padding: 14px 28px;
-            font-size: 1rem;
+            padding: 16px 32px;
+            font-size: 1.1rem;
             font-weight: bold;
-            border: none;
+            color: #ffffff;
+            background-color: #007aff;
             border-radius: 30px;
-            background: #007aff;
-            color: white;
             cursor: pointer;
-            width: 100%;
+            box-shadow: 0 4px 14px rgba(0, 122, 255, 0.4);
         }
-        button.secondary { background: #3a3a3c; display: none; }
     </style>
 </head>
 <body>
 
-    <h1>Kamera Uygulaması</h1>
+    <div class="container">
+        <h1>Kamera Uygulaması</h1>
 
-    <div class="viewport">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="photo-canvas"></canvas>
+        <!-- JS olmadan doğrudan cihaz kamerasını açan HTML elemanı -->
+        <label for="camera-input" class="btn-capture">
+            📷 Fotoğraf Çek
+        </label>
+        <input 
+            type="file" 
+            id="camera-input" 
+            accept="image/*" 
+            capture="environment"
+        >
     </div>
 
-    <div class="controls">
-        <button id="capture-btn">Fotoğraf Çek</button>
-        <button id="retake-btn" class="secondary">Yeniden Çek</button>
-    </div>
-
-    <script>
-        const video = document.getElementById('webcam');
-        const canvas = document.getElementById('photo-canvas');
-        const captureBtn = document.getElementById('capture-btn');
-        const retakeBtn = document.getElementById('retake-btn');
-
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                alert("Kamera izni verilmedi veya desteklenmiyor: " + err.message);
-            }
-        }
-
-        captureBtn.addEventListener('click', () => {
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            video.style.display = 'none';
-            canvas.style.display = 'block';
-            captureBtn.style.display = 'none';
-            retakeBtn.style.display = 'block';
-        });
-
-        retakeBtn.addEventListener('click', () => {
-            canvas.style.display = 'none';
-            video.style.display = 'block';
-            retakeBtn.style.display = 'none';
-            captureBtn.style.display = 'block';
-        });
-
-        startCamera();
-    </script>
 </body>
 </html>
