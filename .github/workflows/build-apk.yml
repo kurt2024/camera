@@ -33,10 +33,17 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Kamera ve Depolama İzinlerini AndroidManifest'e Ekle
+      - name: Tüm Donanım ve Medya İzinlerini AndroidManifest'e Ekle
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />' $MANIFEST_PATH
+          sed -i '/<application/i \
+              <uses-permission android:name="android.permission.CAMERA" />\n \
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />\n \
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n \
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n \
+              <uses-feature android:name="android.hardware.camera" android:required="true" />\n \
+              <uses-feature android:name="android.hardware.camera.autofocus" />\n \
+              <uses-feature android:name="android.hardware.microphone" android:required="true" />' $MANIFEST_PATH
 
       - name: Gradle Çalıştırma İznini Ver
         run: chmod +x android/gradlew
@@ -49,5 +56,5 @@ jobs:
       - name: APK Dosyasını Çıktı Olarak Yükle
         uses: actions/upload-artifact@v4
         with:
-          name: CameraApp-APK
+          name: DynamicCamera-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
