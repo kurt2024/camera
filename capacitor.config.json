@@ -1,6 +1,6 @@
 {
-  "appId": "com.example.nocodecamera",
-  "appName": "Kamera Uygulamasi",
+  "appId": "com.example.dynamiccamera",
+  "appName": "Dinamik Kamera",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
