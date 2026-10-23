@@ -2,64 +2,434 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kamera Uygulaması</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Kamera ve Video Uygulaması</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #121212;
+            background-color: #000;
             color: #ffffff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        h1 { font-size: 1.5rem; margin-bottom: 24px; }
-        
-        /* Gizli Dosya Girdisi */
-        input[type="file"] {
-            display: none;
+            justify-content: space-between;
+            height: 100vh;
+            overflow: hidden;
+            padding: 20px 0;
         }
 
-        /* Fotoğraf Çek Butonu */
-        .btn-capture {
-            display: inline-block;
+        /* Üst Kontrol Paneli */
+        .top-bar {
             width: 100%;
-            padding: 16px 32px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #007aff;
-            border-radius: 30px;
+            max-width: 480px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(0, 122, 255, 0.4);
+        }
+
+        /* Mod Seçici (Fotoğraf / Video) */
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .mode-selector span {
+            opacity: 0.5;
+            cursor: pointer;
+            padding-bottom: 4px;
+        }
+        .mode-selector span.active {
+            opacity: 1;
+            border-bottom: 2px solid #ff3b30;
+        }
+
+        /* Kamera Önizleme Alanı */
+        .viewport {
+            width: 100%;
+            max-width: 480px;
+            height: 70vh;
+            background: #111;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        video, canvas, img.preview-media, video.preview-media {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        canvas, img.preview-media, video.preview-media { display: none; }
+
+        /* Kayıt Süresi Sayacı */
+        .timer {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: none;
+            z-index: 15;
+        }
+
+        /* Flaş Efekti */
+        .flash-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease-out;
+            z-index: 20;
+        }
+
+        /* Alt Kontrol Paneli */
+        .controls {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 20px;
+        }
+        .capture-btn {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: background 0.2s, transform 0.1s;
+        }
+        .capture-btn.recording {
+            background: #ff3b30;
+            border-radius: 12px;
+            transform: scale(0.85);
+        }
+        .action-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Kamera Uygulaması</h1>
-
-        <!-- JS olmadan doğrudan cihaz kamerasını açan HTML elemanı -->
-        <label for="camera-input" class="btn-capture">
-            📷 Fotoğraf Çek
-        </label>
-        <input 
-            type="file" 
-            id="camera-input" 
-            accept="image/*" 
-            capture="environment"
-        >
+    <!-- Üst Bar ve Modlar -->
+    <div class="top-bar">
+        <button id="flash-btn" class="icon-btn">⚡</button>
+        <div class="mode-selector">
+            <span id="mode-photo" class="active">Foto</span>
+            <span id="mode-video">Video</span>
+        </div>
+        <button id="switch-camera-btn" class="icon-btn">🔄</button>
     </div>
 
+    <!-- Önizleme Alanı -->
+    <div class="viewport">
+        <div id="flash-effect" class="flash-overlay"></div>
+        <div id="rec-timer" class="timer">🔴 00:00</div>
+        
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="photo-canvas"></canvas>
+        
+        <!-- Çekilen Medya Önizlemeleri -->
+        <img id="photo-preview" class="preview-media" alt="Fotoğraf">
+        <video id="video-preview" class="preview-media" controls playsinline></video>
+    </div>
+
+    <!-- Alt Kontroller -->
+    <div class="controls">
+        <button id="retake-btn" class="action-btn">Yeniden Çek</button>
+        <button id="capture-btn" class="capture-btn"></button>
+        <div style="display: flex; gap: 8px;">
+            <a id="download-btn" class="action-btn" style="text-decoration:none; text-align:center; line-height:22px;" download="medya">Kaydet</a>
+            <button id="share-btn" class="action-btn" style="background:#007aff;">Paylaş</button>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('photo-canvas');
+        const photoPreview = document.getElementById('photo-preview');
+        const videoPreview = document.getElementById('video-preview');
+        
+        const captureBtn = document.getElementById('capture-btn');
+        const retakeBtn = document.getElementById('retake-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const shareBtn = document.getElementById('share-btn');
+        
+        const switchCameraBtn = document.getElementById('switch-camera-btn');
+        const flashBtn = document.getElementById('flash-btn');
+        const flashEffect = document.getElementById('flash-effect');
+        const recTimer = document.getElementById('rec-timer');
+        
+        const modePhoto = document.getElementById('mode-photo');
+        const modeVideo = document.getElementById('mode-video');
+
+        let currentFacingMode = 'environment';
+        let currentStream = null;
+        let torchState = false;
+        let currentMode = 'photo'; // 'photo' veya 'video'
+
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recordingTimer = null;
+        let secondsCount = 0;
+        let lastBlob = null;
+        let lastFileName = '';
+
+        // Kamerayı Başlat
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: currentFacingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: currentMode === 'video' // Video modunda ses de açılır
+                };
+
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = currentStream;
+            } catch (err) {
+                alert("Kameraya veya mikrofona erişilemedi: " + err.message);
+            }
+        }
+
+        // Mod Değiştirme (Fotoğraf <-> Video)
+        modePhoto.addEventListener('click', () => {
+            if (currentMode === 'photo') return;
+            currentMode = 'photo';
+            modePhoto.classList.add('active');
+            modeVideo.classList.remove('active');
+            startCamera();
+        });
+
+        modeVideo.addEventListener('click', () => {
+            if (currentMode === 'video') return;
+            currentMode = 'video';
+            modeVideo.classList.add('active');
+            modePhoto.classList.remove('active');
+            startCamera();
+        });
+
+        // Ön / Arka Kamera Değiştir
+        switchCameraBtn.addEventListener('click', () => {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            startCamera();
+        });
+
+        // Flaş Kontrolü
+        flashBtn.addEventListener('click', async () => {
+            const track = currentStream?.getVideoTracks()[0];
+            if (track) {
+                const capabilities = track.getCapabilities();
+                if (capabilities.torch) {
+                    torchState = !torchState;
+                    try {
+                        await track.applyConstraints({ advanced: [{ torch: torchState }] });
+                        flashBtn.style.background = torchState ? '#ffd700' : 'rgba(255, 255, 255, 0.2)';
+                    } catch (e) { console.error(e); }
+                } else {
+                    alert("Bu cihazda flaş desteklenmiyor.");
+                }
+            }
+        });
+
+        // Çekim Butonuna Basıldığında
+        captureBtn.addEventListener('click', () => {
+            if (currentMode === 'photo') {
+                takePhoto();
+            } else {
+                toggleVideoRecording();
+            }
+        });
+
+        // Fotoğraf Çekme
+        function takePhoto() {
+            flashEffect.style.opacity = '1';
+            setTimeout(() => { flashEffect.style.opacity = '0'; }, 150);
+
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 1280;
+            canvas.height = video.videoHeight || 720;
+            
+            if (currentFacingMode === 'user') {
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+            }
+
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob((blob) => {
+                lastBlob = blob;
+                lastFileName = `foto_${Date.now()}.jpg`;
+                const url = URL.createObjectURL(blob);
+                
+                photoPreview.src = url;
+                downloadBtn.href = url;
+                downloadBtn.download = lastFileName;
+
+                video.style.display = 'none';
+                photoPreview.style.display = 'block';
+                showPreviewControls();
+            }, 'image/jpeg', 0.95);
+        }
+
+        // Video Kaydını Başlat / Durdur
+        function toggleVideoRecording() {
+            if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                // Kaydı Başlat
+                recordedChunks = [];
+                
+                // En iyi desteklenen video formatını seç (webm, mp4 vb.)
+                const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'video/webm';
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = ''; // Varsayılan format
+                }
+
+                try {
+                    mediaRecorder = new MediaRecorder(currentStream, options);
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(currentStream);
+                }
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    lastBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+                    lastFileName = `video_${Date.now()}.webm`;
+                    const url = URL.createObjectURL(lastBlob);
+
+                    videoPreview.src = url;
+                    downloadBtn.href = url;
+                    downloadBtn.download = lastFileName;
+
+                    video.style.display = 'none';
+                    videoPreview.style.display = 'block';
+                    showPreviewControls();
+                };
+
+                mediaRecorder.start();
+                captureBtn.classList.add('recording');
+                modePhoto.style.pointerEvents = 'none';
+                modeVideo.style.pointerEvents = 'none';
+                
+                // Zamanlayıcıyı başlat
+                secondsCount = 0;
+                recTimer.style.display = 'block';
+                recTimer.innerText = "🔴 00:00";
+                recordingTimer = setInterval(() => {
+                    secondsCount++;
+                    let m = Math.floor(secondsCount / 60).toString().padStart(2, '0');
+                    let s = (secondsCount % 60).toString().padStart(2, '0');
+                    recTimer.innerText = `🔴 ${m}:${s}`;
+                }, 1000);
+
+            } else {
+                // Kaydı Durdur
+                mediaRecorder.stop();
+                captureBtn.classList.remove('recording');
+                clearInterval(recordingTimer);
+                recTimer.style.display = 'none';
+            }
+        }
+
+        // Önizleme Ekranı Kontrollerini Göster
+        function showPreviewControls() {
+            captureBtn.style.display = 'none';
+            switchCameraBtn.style.display = 'none';
+            flashBtn.style.display = 'none';
+            document.querySelector('.mode-selector').style.display = 'none';
+            
+            retakeBtn.style.display = 'block';
+            downloadBtn.style.display = 'block';
+            shareBtn.style.display = 'block';
+        }
+
+        // Yeniden Çek / Sıfırla
+        retakeBtn.addEventListener('click', () => {
+            photoPreview.style.display = 'none';
+            videoPreview.style.display = 'none';
+            videoPreview.src = '';
+            video.style.display = 'block';
+            
+            retakeBtn.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            shareBtn.style.display = 'none';
+            
+            captureBtn.style.display = 'block';
+            switchCameraBtn.style.display = 'flex';
+            flashBtn.style.display = 'flex';
+            document.querySelector('.mode-selector').style.display = 'flex';
+            modePhoto.style.pointerEvents = 'auto';
+            modeVideo.style.pointerEvents = 'auto';
+        });
+
+        // Paylaşım API'si (WhatsApp, Instagram, Telegram vb. ile paylaşma)
+        shareBtn.addEventListener('click', async () => {
+            if (!lastBlob) return;
+            const file = new File([lastBlob], lastFileName, { type: lastBlob.type });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Kamera Medyası',
+                        text: 'Kamera uygulamam ile çekildi!'
+                    });
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        alert("Paylaşım başarısız oldu: " + err.message);
+                    }
+                }
+            } else {
+                alert("Cihazınız doğrudan dosya paylaşımını desteklemiyor. Lütfen 'Kaydet' butonunu kullanın.");
+            }
+        });
+
+        startCamera();
+    </script>
 </body>
 </html>
