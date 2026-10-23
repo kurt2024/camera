@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Java JDK 17 Kurulumu
         uses: actions/setup-java@v4
@@ -34,20 +33,20 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Kamera İzinlerini AndroidManifest.xml Dosyasına Ekle
+      - name: Kamera ve Depolama İzinlerini AndroidManifest'e Ekle
         run: |
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="true" />' $MANIFEST_PATH
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />' $MANIFEST_PATH
 
-      - name: Gradle İzinlerini Düzenle
+      - name: Gradle Çalıştırma İznini Ver
         run: chmod +x android/gradlew
 
-      - name: APK Derle (Release Unsigned / Debug)
+      - name: APK Derle (Debug)
         run: |
           cd android
           ./gradlew assembleDebug
 
-      - name: APK Dosyasını Artifact Olarak Yükle
+      - name: APK Dosyasını Çıktı Olarak Yükle
         uses: actions/upload-artifact@v4
         with:
           name: CameraApp-APK
